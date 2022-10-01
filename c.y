@@ -345,8 +345,8 @@ declarator
     ;
 
 direct_declarator
-    : IDENTIFIER
-    | '(' declarator ')'
+    : IDENTIFIER { $$ = new DirectDeclarator(new StringType("IDENTIFIER")); }
+    | '(' declarator ')' { $$ = new DirectDeclarator(static_cast<Declarator *>($2)); }
     | direct_declarator '[' ']'
     | direct_declarator '[' '*' ']'
     | direct_declarator '[' STATIC type_qualifier_list assignment_expression ']'
@@ -356,9 +356,9 @@ direct_declarator
     | direct_declarator '[' type_qualifier_list assignment_expression ']'
     | direct_declarator '[' type_qualifier_list ']'
     | direct_declarator '[' assignment_expression ']'
-    | direct_declarator '(' parameter_type_list ')'
-    | direct_declarator '(' ')'
-    | direct_declarator '(' identifier_list ')'
+    | direct_declarator '(' parameter_type_list ')' { $$ = new DirectDeclarator(static_cast<DirectDeclarator *>($1), new DirectDeclaratorUtil(static_cast<ParameterTypeList *>($3))); }
+    | direct_declarator '(' ')' { $$ = new DirectDeclarator(static_cast<DirectDeclarator *>($1), nullptr); }
+    | direct_declarator '(' identifier_list ')' { $$ = new DirectDeclarator(static_cast<DirectDeclarator *>($1), new DirectDeclaratorUtil(static_cast<IdentifierList *>($3))); }
     ;
 
 pointer
@@ -375,24 +375,25 @@ type_qualifier_list
 
 
 parameter_type_list
-    : parameter_list ',' ELLIPSIS
-    | parameter_list
+    : parameter_list ',' ELLIPSIS { DeclarationSpecifiers *ellipsis = new DeclarationSpecifiers(); ellipsis->add(new StringType("ELLIPSIS"));
+                                    ((ParameterTypeList *)$1)->add(new ParameterDeclaration(ellipsis)); $$ = $1; }
+    | parameter_list { $$ = $1; }
     ;
 
 parameter_list
-    : parameter_declaration
-    | parameter_list ',' parameter_declaration
+    : parameter_declaration { $$ = new ParameterTypeList(); ((ParameterTypeList *)$$)->add(static_cast<ParameterDeclaration *>($1)); }
+    | parameter_list ',' parameter_declaration { ((ParameterTypeList *)$1)->add(static_cast<ParameterDeclaration *>($3)); $$ = $1; }
     ;
 
 parameter_declaration
-    : declaration_specifiers declarator
-    | declaration_specifiers abstract_declarator
-    | declaration_specifiers
+    : declaration_specifiers declarator { $$ = new ParameterDeclaration(static_cast<DeclarationSpecifiers *>($1), static_cast<Declarator *>($2)); }
+    | declaration_specifiers abstract_declarator { $$ = new ParameterDeclaration(static_cast<DeclarationSpecifiers *>($1), static_cast<AbstractDeclarator *>($2)); }
+    | declaration_specifiers { $$ = new ParameterDeclaration(static_cast<DeclarationSpecifiers *>($1)); }
     ;
 
 identifier_list
-    : IDENTIFIER
-    | identifier_list ',' IDENTIFIER
+    : IDENTIFIER { $$ = new IdentifierList(); ((IdentifierList *)$$)->add(new StringType("IDENTIFIER")); }
+    | identifier_list ',' IDENTIFIER { ((IdentifierList *)$1)->add(new StringType("IDENTIFIER")); $$ = $1; }
     ;
 
 type_name

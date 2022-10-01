@@ -94,7 +94,115 @@ public:
     }
 };
 
-class DirectDeclarator : public Node {};
+class Declarator;
+
+class AbstractDeclarator;
+
+class ParameterDeclaration : public Node {
+private:
+    DeclarationSpecifiers *declarationSpecifiers;
+    union {
+        Declarator *declarator;
+        AbstractDeclarator *abstractDeclarator;
+    };
+    uint8_t type;
+
+public:
+    ParameterDeclaration(DeclarationSpecifiers *declarationSpecifiers, Declarator *declarator) : declarationSpecifiers(declarationSpecifiers), declarator(declarator), type(1) {}
+    ParameterDeclaration(DeclarationSpecifiers *declarationSpecifiers, AbstractDeclarator *abstractDeclarator)
+    : declarationSpecifiers(declarationSpecifiers), abstractDeclarator(abstractDeclarator), type(2) {}
+    ParameterDeclaration(DeclarationSpecifiers *declarationSpecifiers) : declarationSpecifiers(declarationSpecifiers), type(0) {}
+
+    virtual void print(int depth);
+};
+
+class ParameterTypeList : public Node {
+private:
+    vector<ParameterDeclaration *> parameterDeclarations;
+
+public:
+    void add(ParameterDeclaration *parameterDeclaration) { parameterDeclarations.push_back(parameterDeclaration); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "IdentifierList";
+        cout << '\n';
+        for (auto parameterDeclaration : parameterDeclarations)
+            parameterDeclaration->print(depth + 1);
+    }
+};
+
+class IdentifierList : public Node {
+private:
+    vector<StringType *> identifiers;
+
+public:
+    void add(StringType *identifier) { identifiers.push_back(identifier); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "IdentifierList";
+        cout << '\n';
+        for (auto identifier : identifiers)
+            identifier->print(depth + 1);
+    }
+};
+
+class DirectDeclaratorUtil : public Node {
+private:
+    union {
+        ParameterTypeList *parameterTypeList;
+        IdentifierList *identifierList;
+    };
+    uint8_t type;
+
+public:
+    DirectDeclaratorUtil(ParameterTypeList *parameterTypeList) : parameterTypeList(parameterTypeList), type(1) {}
+    DirectDeclaratorUtil(IdentifierList *identifierList) : identifierList(identifierList), type(2) {}
+    DirectDeclaratorUtil() : type(0) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "DirectDeclaratorUtil";
+        cout << '\n';
+        switch (type) {
+        case 1:
+            if (parameterTypeList != nullptr)
+                parameterTypeList->print(depth + 1);
+            break;
+        case 2:
+            if (identifierList != nullptr)
+                identifierList->print(depth + 1);
+            break;
+        default:
+            break;
+        }
+    }
+};
+
+class DirectDeclarator : public Node {
+private:
+    union {
+        StringType *stringType;
+        Declarator *declarator;
+        struct {
+            DirectDeclarator *directDeclarator;
+            DirectDeclaratorUtil *ddUtil;
+        };
+    };
+    uint8_t type;
+
+public:
+    DirectDeclarator(StringType *stringType) : stringType(stringType), type(1) {}
+    DirectDeclarator(Declarator *declarator) : declarator(declarator), type(2) {}
+    DirectDeclarator(DirectDeclarator *directDeclarator, DirectDeclaratorUtil *ddUtil) : directDeclarator(directDeclarator), ddUtil(ddUtil), type(3) {}
+    DirectDeclarator() : type(0) {}
+
+    virtual void print(int depth);
+};
 
 class Declarator : public Node {
 private:
@@ -185,11 +293,11 @@ public:
                 declarationSpecifiers->print(depth + 1);
             if (initDeclaratorList != nullptr)
                 initDeclaratorList->print(depth + 1);
-                break;
+            break;
         case 2:
             if (staticAssertDeclaration != nullptr)
                 staticAssertDeclaration->print(depth + 1);
-                break;
+            break;
         default:
             break;
         }
@@ -298,7 +406,7 @@ public:
         case 1:
             if (primaryExpression != nullptr)
                 primaryExpression->print(depth + 1);
-                break;
+            break;
         default:
             break;
         }
@@ -423,13 +531,13 @@ public:
         case 1:
             if (unaryExpression != nullptr)
                 unaryExpression->print(depth + 1);
-                break;
+            break;
         case 2:
             if (typeName != nullptr)
                 typeName->print(depth + 1);
             if (castExpression != nullptr)
                 castExpression->print(depth + 1);
-                break;
+            break;
         default:
             break;
         }
@@ -466,11 +574,11 @@ public:
                 operator_->print(depth + 1);
             if (operand2 != nullptr)
                 operand2->print(depth + 1);
-                break;
+            break;
         case 2:
             if (castExpression != nullptr)
                 castExpression->print(depth + 1);
-                break;
+            break;
         default:
             break;
         }
@@ -523,11 +631,11 @@ public:
                 assignmentOperator->print(depth + 1);
             if (assignmentExpression != nullptr)
                 assignmentExpression->print(depth + 1);
-                break;
+            break;
         case 2:
             if (conditionalExpression != nullptr)
                 conditionalExpression->print(depth + 1);
-                break;
+            break;
         default:
             break;
         }
@@ -599,27 +707,27 @@ public:
         case 1:
             if (labeled != nullptr)
                 labeled->print(depth + 1);
-                break;
+            break;
         case 2:
             if (compound != nullptr)
                 compound->print(depth + 1);
-                break;
+            break;
         case 3:
             if (expression != nullptr)
                 expression->print(depth + 1);
-                break;
+            break;
         case 4:
             if (selection != nullptr)
                 selection->print(depth + 1);
-                break;
+            break;
         case 5:
             if (iteration != nullptr)
                 iteration->print(depth + 1);
-                break;
+            break;
         case 6:
             if (jump != nullptr)
                 jump->print(depth + 1);
-                break;
+            break;
         default:
             break;
         }
@@ -648,11 +756,11 @@ public:
         case 1:
             if (declaration != nullptr)
                 declaration->print(depth + 1);
-                break;
+            break;
         case 2:
             if (statement != nullptr)
                 statement->print(depth + 1);
-                break;
+            break;
         default:
             break;
         }
