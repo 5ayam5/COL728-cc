@@ -1,6 +1,6 @@
 #include "ast.hpp"
 
-vector<ExternalDeclaration *> declarations;
+vector<ExternalDeclaration *> external_declarations;
 
 void CompoundStatement::add(BlockItem *blockItem) { blockItems.push_back(blockItem); }
 
@@ -148,4 +148,9 @@ void ConditionalExpression::print(int depth) {
         expressionStatement->print(depth + 1);
     if (conditionalExpression != nullptr)
         conditionalExpression->print(depth + 1);
+}
+
+void dump_ast() {
+  for (auto external_declaration : external_declarations)
+      external_declaration->print(0);
 }

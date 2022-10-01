@@ -24,15 +24,15 @@ class ExternalDeclaration : public Node {};
 
 class StringType : public Node {
 private:
-    string name;
+    string id, value;
 
 public:
-    StringType(string name) : name(name) {}
+    StringType(string id, string value = "") : id(id), value(value) {}
 
     virtual void print(int depth) {
         for (int i = 0; i < depth; i++)
             cout << TABBING;
-        cout << name;
+        cout << id << ' ' << value;
         cout << '\n';
     }
 };
@@ -798,6 +798,8 @@ public:
     }
 };
 
-extern vector<ExternalDeclaration *> declarations;
+extern vector<ExternalDeclaration *> external_declarations;
+
+void dump_ast();
 
 #endif

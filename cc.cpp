@@ -25,7 +25,6 @@ main(int argc, char **argv)
   assert(yyin);
   int ret = yyparse();
   printf("retv = %d\n", ret);
-  for (auto declaration : declarations)
-      declaration->print(0);
+  dump_ast();
   exit(0);
 }

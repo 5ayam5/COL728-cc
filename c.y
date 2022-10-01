@@ -34,7 +34,7 @@ void yyerror(const char *s);
 %%
 
 primary_expression
-    : IDENTIFIER { $$ = new PrimaryExpression(new StringType("IDENTIFIER")); }
+    : IDENTIFIER { $$ = new PrimaryExpression(new StringType("IDENTIFIER", yytext)); }
     | constant { $$ = new PrimaryExpression(static_cast<StringType *>($1)); }
     | string { $$ = new PrimaryExpression(static_cast<StringType *>($1)); }
     | '(' expression ')' { $$ = new PrimaryExpression(static_cast<ExpressionStatement *>($2)); }
@@ -42,18 +42,18 @@ primary_expression
     ;
 
 constant
-    : I_CONSTANT        /* includes character_constant */ { $$ = new StringType("I_CONSTANT"); }
-    | F_CONSTANT { $$ = new StringType("F_CONSTANT"); }
-    | ENUMERATION_CONSTANT  /* after it has been defined as such */ { $$ = new StringType("ENUMERATION_CONSTANT"); }
+    : I_CONSTANT        /* includes character_constant */ { $$ = new StringType("I_CONSTANT", yytext); }
+    | F_CONSTANT { $$ = new StringType("F_CONSTANT", yytext); }
+    | ENUMERATION_CONSTANT  /* after it has been defined as such */ { $$ = new StringType("ENUMERATION_CONSTANT", yytext); }
     ;
 
 enumeration_constant        /* before it has been defined as such */
-    : IDENTIFIER { $$ = new StringType("IDENTIFIER"); }
+    : IDENTIFIER { $$ = new StringType("IDENTIFIER", yytext); }
     ;
 
 string
-    : STRING_LITERAL { $$ = new StringType("STRING_LITERAL"); }
-    | FUNC_NAME { $$ = new StringType("FUNC_NAME"); }
+    : STRING_LITERAL { $$ = new StringType("STRING_LITERAL", yytext); }
+    | FUNC_NAME { $$ = new StringType("FUNC_NAME", yytext); }
     ;
 
 generic_selection
@@ -257,7 +257,7 @@ type_specifier
     | atomic_type_specifier { $$ = $1; }
     | struct_or_union_specifier { $$ = $1; }
     | enum_specifier { $$ = $1; }
-    | TYPEDEF_NAME      /* after it has been defined as such */ { $$ = new StringType("TYPEDEF_NAME"); }
+    | TYPEDEF_NAME      /* after it has been defined as such */ { $$ = new StringType("TYPEDEF_NAME", yytext); }
     ;
 
 struct_or_union_specifier
@@ -345,7 +345,7 @@ declarator
     ;
 
 direct_declarator
-    : IDENTIFIER { $$ = new DirectDeclarator(new StringType("IDENTIFIER")); }
+    : IDENTIFIER { $$ = new DirectDeclarator(new StringType("IDENTIFIER", yytext)); }
     | '(' declarator ')' { $$ = new DirectDeclarator(static_cast<Declarator *>($2)); }
     | direct_declarator '[' ']'
     | direct_declarator '[' '*' ']'
@@ -392,8 +392,8 @@ parameter_declaration
     ;
 
 identifier_list
-    : IDENTIFIER { $$ = new IdentifierList(); ((IdentifierList *)$$)->add(new StringType("IDENTIFIER")); }
-    | identifier_list ',' IDENTIFIER { ((IdentifierList *)$1)->add(new StringType("IDENTIFIER")); $$ = $1; }
+    : IDENTIFIER { $$ = new IdentifierList(); ((IdentifierList *)$$)->add(new StringType("IDENTIFIER", yytext)); }
+    | identifier_list ',' IDENTIFIER { ((IdentifierList *)$1)->add(new StringType("IDENTIFIER", yytext)); $$ = $1; }
     ;
 
 type_name
@@ -521,8 +521,8 @@ jump_statement
     ;
 
 translation_unit
-    : external_declaration { declarations.push_back(static_cast<ExternalDeclaration *>($1)); }
-    | translation_unit external_declaration { declarations.push_back(static_cast<ExternalDeclaration *>($2)); }
+    : external_declaration { external_declarations.push_back(static_cast<ExternalDeclaration *>($1)); }
+    | translation_unit external_declaration { external_declarations.push_back(static_cast<ExternalDeclaration *>($2)); }
     ;
 
 external_declaration
