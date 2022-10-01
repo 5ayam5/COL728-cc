@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "c.tab.hpp"
+#include "ast.hpp"
 
 extern "C" int yylex();
 int yyparse();
@@ -24,5 +25,7 @@ main(int argc, char **argv)
   assert(yyin);
   int ret = yyparse();
   printf("retv = %d\n", ret);
+  for (auto declaration : declarations)
+      declaration->print(0);
   exit(0);
 }

@@ -478,7 +478,7 @@ labeled_statement
 
 compound_statement
     : '{' '}' { $$ = new CompoundStatement(); }
-    | '{'  block_item_list '}' { $$ = $1; }
+    | '{'  block_item_list '}' { $$ = $2; }
     ;
 
 block_item_list

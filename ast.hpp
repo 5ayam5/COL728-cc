@@ -3,10 +3,21 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
+
+#define TABBING "  "
 
 using namespace std;
 
-class Node {};
+class Node {
+public:
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "Node (not implemented)";
+        cout << '\n';
+    }
+};
 #define YYSTYPE Node*
 
 class ExternalDeclaration : public Node {};
@@ -17,6 +28,13 @@ private:
 
 public:
     StringType(string name) : name(name) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << name;
+        cout << '\n';
+    }
 };
 
 class DeclarationSpecifiers : public Node {
@@ -25,6 +43,15 @@ private:
 
 public:
     void add(StringType *specifier) { specifiers.push_back(specifier); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "DeclarationSpecifiers";
+        cout << '\n';
+        for (auto specifier : specifiers)
+            specifier->print(depth + 1);
+    }
 };
 
 class TypeQualifierList : public Node {
@@ -32,7 +59,16 @@ private:
     vector<StringType *> typeQualifiers;
 
 public:
-    void add(StringType *stringType) { typeQualifiers.push_back(stringType); }
+    void add(StringType *typeQualifier) { typeQualifiers.push_back(typeQualifier); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "TypeQualifierList";
+        cout << '\n';
+        for (auto typeQualifier : typeQualifiers)
+            typeQualifier->print(depth + 1);
+    }
 };
 
 class Pointer : public Node {
@@ -44,8 +80,18 @@ public:
     Pointer(TypeQualifierList *typeQualifierList,
             Pointer *childPointer)
     : typeQualifierList(typeQualifierList), childPointer(childPointer) {}
-
     Pointer() : typeQualifierList(nullptr), childPointer(nullptr) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "Pointer";
+        cout << '\n';
+        if (typeQualifierList != nullptr)
+            typeQualifierList->print(depth + 1);
+        if (childPointer != nullptr)
+            childPointer->print(depth + 1);
+    }
 };
 
 class DirectDeclarator : public Node {};
@@ -58,6 +104,17 @@ private:
 public:
     Declarator(Pointer *pointer, DirectDeclarator *directDeclarator)
     : pointer(pointer), directDeclarator(directDeclarator) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "Declarator";
+        cout << '\n';
+        if (pointer != nullptr)
+            pointer->print(depth + 1);
+        if (directDeclarator != nullptr)
+            directDeclarator->print(depth + 1);
+    }
 };
 
 class Initializer : public Node {};
@@ -69,6 +126,17 @@ private:
 
 public:
     InitDeclarator(Declarator *declarator, Initializer *initializer) : declarator(declarator), initializer(initializer) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "InitDeclarator";
+        cout << '\n';
+        if (declarator != nullptr)
+            declarator->print(depth + 1);
+        if (initializer != nullptr)
+            initializer->print(depth + 1);
+    }
 };
 
 class InitDeclaratorList : public Node {
@@ -77,6 +145,15 @@ private:
 
 public:
     void add(InitDeclarator *initDeclarator) { initDeclarators.push_back(initDeclarator); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "InitDeclaratorList";
+        cout << '\n';
+        for (auto initDeclarator : initDeclarators)
+            initDeclarator->print(depth + 1);
+    }
 };
 
 class StaticAssertDeclaration : public Node {};
@@ -96,6 +173,27 @@ public:
     Declaration(DeclarationSpecifiers *declarationSpecifiers, InitDeclaratorList *initDeclaratorList) : declarationSpecifiers(declarationSpecifiers), initDeclaratorList(initDeclaratorList), type(1) {}
     Declaration(StaticAssertDeclaration *staticAssertDeclaration) : staticAssertDeclaration(staticAssertDeclaration), type(2) {}
     Declaration() : type(0) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "Declaration";
+        cout << '\n';
+        switch (type) {
+        case 1:
+            if (declarationSpecifiers != nullptr)
+                declarationSpecifiers->print(depth + 1);
+            if (initDeclaratorList != nullptr)
+                initDeclaratorList->print(depth + 1);
+                break;
+        case 2:
+            if (staticAssertDeclaration != nullptr)
+                staticAssertDeclaration->print(depth + 1);
+                break;
+        default:
+            break;
+        }
+    }
 };
 
 class DeclarationList : public Node {
@@ -104,6 +202,15 @@ private:
 
 public:
     void add(Declaration *declaration) { declarations.push_back(declaration); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "DeclarationList";
+        cout << '\n';
+        for (auto declaration : declarations)
+            declaration->print(depth + 1);
+    }
 };
 
 class LabeledStatement : public Node {};
@@ -121,6 +228,8 @@ private:
 
 public:
     GenericAssociation(TypeName *typeName, AssignmentExpression *assignmentExpression) : typeName(typeName), assignmentExpression(assignmentExpression) {}
+
+    virtual void print(int depth);
 };
 
 class GenericAssocList : public Node {
@@ -129,6 +238,15 @@ private:
 
 public:
     void add(GenericAssociation *genericAssociation) { genericAssociations.push_back(genericAssociation); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "GenericAssocList";
+        cout << '\n';
+        for (auto genericAssociation : genericAssociations)
+            genericAssociation->print(depth + 1);
+    }
 };
 
 class GenericSelection : public Node {
@@ -138,6 +256,8 @@ private:
 
 public:
     GenericSelection(AssignmentExpression *assignmentExpression, GenericAssocList *genericAssocList) {}
+
+    virtual void print(int depth);
 };
 
 class PrimaryExpression : public Node {
@@ -154,6 +274,8 @@ public:
     PrimaryExpression(ExpressionStatement *expressionStatement) : expressionStatement(expressionStatement), type(2) {}
     PrimaryExpression(GenericSelection *genericSelection) : genericSelection(genericSelection), type(3) {}
     PrimaryExpression() : type(0) {}
+
+    virtual void print(int depth);
 };
 
 class PostfixExpression : public Node {
@@ -166,6 +288,21 @@ private:
 public:
     PostfixExpression(PrimaryExpression *primaryExpression) : primaryExpression(primaryExpression), type(1) {}
     PostfixExpression() : type(0) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "PostfixExpression";
+        cout << '\n';
+        switch (type) {
+        case 1:
+            if (primaryExpression != nullptr)
+                primaryExpression->print(depth + 1);
+                break;
+        default:
+            break;
+        }
+    }
 };
 
 class CastExpression;
@@ -196,6 +333,8 @@ public:
     UnaryExpression(StringType *castOp, CastExpression *castExpression) : castOp(castOp), castExpression(castExpression), type(3) {}
     UnaryExpression(StringType *qualifier, TypeName *typeName) : qualifier(qualifier), typeName(typeName), type(4) {}
     UnaryExpression() : type(0) {}
+
+    virtual void print(int depth);
 };
 
 class SpecifierQualifierList : public Node {
@@ -204,6 +343,15 @@ private:
 
 public:
     void add(StringType *stringType) { sqList.push_back(stringType); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "SpecifierQualifierList";
+        cout << '\n';
+        for (auto stringType : sqList)
+            stringType->print(depth + 1);
+    }
 };
 
 class DirectAbstractDeclarator : public Node {};
@@ -216,6 +364,17 @@ private:
 public:
     AbstractDeclarator(Pointer *pointer, DirectAbstractDeclarator *directAbstractDeclarator) :
     pointer(pointer), directAbstractDeclarator(directAbstractDeclarator) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "AbstractDeclarator";
+        cout << '\n';
+        if (pointer != nullptr)
+            pointer->print(depth + 1);
+        if (directAbstractDeclarator != nullptr)
+            directAbstractDeclarator->print(depth + 1);
+    }
 };
 
 class TypeName : public Node {
@@ -226,6 +385,17 @@ private:
 public:
     TypeName(SpecifierQualifierList *specifierQualifierList, AbstractDeclarator *abstractDeclarator)
     : specifierQualifierList(specifierQualifierList), abstractDeclarator(abstractDeclarator) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "AbstractDeclarator";
+        cout << '\n';
+        if (specifierQualifierList != nullptr)
+            specifierQualifierList->print(depth + 1);
+        if (abstractDeclarator != nullptr)
+            abstractDeclarator->print(depth + 1);
+    }
 };
 
 class CastExpression : public Node {
@@ -243,6 +413,27 @@ public:
     CastExpression(UnaryExpression *unaryExpression) : unaryExpression(unaryExpression), type(1) {}
     CastExpression(TypeName *typeName, CastExpression *castExpression) : typeName(typeName), castExpression(castExpression), type(2) {}
     CastExpression() : type(0) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "CastExpression";
+        cout << '\n';
+        switch (type) {
+        case 1:
+            if (unaryExpression != nullptr)
+                unaryExpression->print(depth + 1);
+                break;
+        case 2:
+            if (typeName != nullptr)
+                typeName->print(depth + 1);
+            if (castExpression != nullptr)
+                castExpression->print(depth + 1);
+                break;
+        default:
+            break;
+        }
+    }
 };
 
 class BinaryExpression : public Node {
@@ -261,6 +452,29 @@ public:
     BinaryExpression(BinaryExpression *operand1, StringType *operator_, BinaryExpression *operand2) : operand1(operand1), operator_(operator_), operand2(operand2), type(1) {}
     BinaryExpression(CastExpression *castExpression) : castExpression(castExpression), type(2) {}
     BinaryExpression() : type(0) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "BinaryExpression";
+        cout << '\n';
+        switch (type) {
+        case 1:
+            if (operand1 != nullptr)
+                operand1->print(depth + 1);
+            if (operator_ != nullptr)
+                operator_->print(depth + 1);
+            if (operand2 != nullptr)
+                operand2->print(depth + 1);
+                break;
+        case 2:
+            if (castExpression != nullptr)
+                castExpression->print(depth + 1);
+                break;
+        default:
+            break;
+        }
+    }
 };
 
 class ExpressionStatement;
@@ -274,6 +488,8 @@ private:
 public:
     ConditionalExpression(BinaryExpression *binaryExpression, ExpressionStatement *expressionStatement, ConditionalExpression *conditionalExpression)
     : binaryExpression(binaryExpression), expressionStatement(expressionStatement), conditionalExpression(conditionalExpression) {}
+
+    virtual void print(int depth);
 };
 
 class AssignmentExpression : public Node {
@@ -293,6 +509,29 @@ public:
     : unaryExpression(unaryExpression), assignmentOperator(assignmentOperator), assignmentExpression(assignmentExpression), type(1) {}
     AssignmentExpression(ConditionalExpression *conditionalExpression) : conditionalExpression(conditionalExpression), type(2) {}
     AssignmentExpression() : type(0) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "AssignmentExpression";
+        cout << '\n';
+        switch (type) {
+        case 1:
+            if (unaryExpression != nullptr)
+                unaryExpression->print(depth + 1);
+            if (assignmentOperator != nullptr)
+                assignmentOperator->print(depth + 1);
+            if (assignmentExpression != nullptr)
+                assignmentExpression->print(depth + 1);
+                break;
+        case 2:
+            if (conditionalExpression != nullptr)
+                conditionalExpression->print(depth + 1);
+                break;
+        default:
+            break;
+        }
+    }
 };
 
 class ExpressionStatement : public Node {
@@ -301,16 +540,27 @@ private:
 
 public:
     void add(AssignmentExpression *assignmentExpression) { expressions.push_back(assignmentExpression); }
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "ExpressionStatement";
+        cout << '\n';
+        for (auto expression : expressions)
+            expression->print(depth + 1);
+    }
 };
 
 class BlockItem;
 
 class CompoundStatement : public Node {
 private:
-    vector<BlockItem *> blockItemList;
+    vector<BlockItem *> blockItems;
 
 public:
     void add(BlockItem *blockItem);
+
+    virtual void print(int depth);
 };
 
 class SelectionStatement : public Node {};
@@ -339,6 +589,41 @@ public:
     Statement(IterationStatement *iteration) : iteration(iteration), type(5) {}
     Statement(JumpStatement *jump) : jump(jump), type(6) {}
     Statement() : type(0) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "Statement";
+        cout << '\n';
+        switch (type) {
+        case 1:
+            if (labeled != nullptr)
+                labeled->print(depth + 1);
+                break;
+        case 2:
+            if (compound != nullptr)
+                compound->print(depth + 1);
+                break;
+        case 3:
+            if (expression != nullptr)
+                expression->print(depth + 1);
+                break;
+        case 4:
+            if (selection != nullptr)
+                selection->print(depth + 1);
+                break;
+        case 5:
+            if (iteration != nullptr)
+                iteration->print(depth + 1);
+                break;
+        case 6:
+            if (jump != nullptr)
+                jump->print(depth + 1);
+                break;
+        default:
+            break;
+        }
+    }
 };
 
 class BlockItem : public Node {
@@ -347,27 +632,62 @@ private:
         Declaration *declaration;
         Statement *statement;
     };
-    bool isDeclaration;
+    uint8_t type;
 
 public:
-    BlockItem(Declaration *declaration) : declaration(declaration), isDeclaration(true) {}
-    BlockItem(Statement *statement) : statement(statement), isDeclaration(false) {}
+    BlockItem(Declaration *declaration) : declaration(declaration), type(1) {}
+    BlockItem(Statement *statement) : statement(statement), type(2) {}
+    BlockItem() : type(0) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "BlockItem";
+        cout << '\n';
+        switch (type) {
+        case 1:
+            if (declaration != nullptr)
+                declaration->print(depth + 1);
+                break;
+        case 2:
+            if (statement != nullptr)
+                statement->print(depth + 1);
+                break;
+        default:
+            break;
+        }
+    }
 };
 
 class FunctionDefinition : public ExternalDeclaration {
 private:
-    DeclarationSpecifiers *declarationSpecifers;
+    DeclarationSpecifiers *declarationSpecifiers;
     Declarator *declarator;
     DeclarationList *declarationList;
     CompoundStatement *compoundStatement;
 
 public:
-    FunctionDefinition(DeclarationSpecifiers *declarationSpecifers,
+    FunctionDefinition(DeclarationSpecifiers *declarationSpecifiers,
                        Declarator *declarator,
                        DeclarationList *declarationList,
                        CompoundStatement *compoundStatement)
-    : declarationSpecifers(declarationSpecifers), declarator(declarator),
+    : declarationSpecifiers(declarationSpecifiers), declarator(declarator),
       declarationList(declarationList), compoundStatement(compoundStatement) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "FunctionDefinition";
+        cout << '\n';
+        if (declarationSpecifiers != nullptr)
+            declarationSpecifiers->print(depth + 1);
+        if (declarator != nullptr)
+            declarator->print(depth + 1);
+        if (declarationList != nullptr)
+            declarationList->print(depth + 1);
+        if (compoundStatement != nullptr)
+            compoundStatement->print(depth + 1);
+    }
 };
 
 extern vector<ExternalDeclaration *> declarations;
