@@ -1,14 +1,15 @@
+%code requires{
+#include "ast.hpp"
+}
+
 %{
 #include <cstdio>
 #include <iostream>
-#include "ast.hpp"
-using namespace std;
 
 // stuff from flex that bison needs to know about:
 extern "C" int yylex();
 int yyparse();
 extern "C" FILE *yyin;
-extern char yytext[]; // TODO : use this
  
 void yyerror(const char *s);
 %}
@@ -31,10 +32,17 @@ void yyerror(const char *s);
 %token  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
 
 %start translation_unit
+
+%union {
+    const char *text;
+    Node *node;
+}
+
+%type <node> translation_unit external_declaration function_definition declaration declaration_specifiers init_declarator_list init_declarator declarator direct_declarator pointer type_name parameter_type_list parameter_list parameter_declaration identifier_list type_specifier specifier_qualifier_list struct_or_union_specifier struct_or_union struct_declaration_list struct_declaration struct_declarator_list struct_declarator enum_specifier enumerator_list initializer initializer_list designator designator_list constant_expression assignment_expression conditional_expression logical_or_expression logical_and_expression inclusive_or_expression exclusive_or_expression and_expression equality_expression relational_expression shift_expression additive_expression multiplicative_expression cast_expression unary_expression postfix_expression primary_expression argument_expression_list statement labeled_statement compound_statement expression_statement selection_statement iteration_statement jump_statement constant declaration_list string enumeration_constant generic_selection generic_assoc_list generic_association unary_operator assignment_operator expression storage_class_specifier type_qualifier type_qualifier_list enumerator abstract_declarator function_specifier alignment_specifier block_item_list block_item static_assert_declaration atomic_type_specifier direct_abstract_declarator
 %%
 
 primary_expression
-    : IDENTIFIER { $$ = new PrimaryExpression(new StringType("IDENTIFIER", yytext)); }
+    : IDENTIFIER { $$ = new PrimaryExpression(new StringType("IDENTIFIER", $<text>1)); }
     | constant { $$ = new PrimaryExpression(static_cast<StringType *>($1)); }
     | string { $$ = new PrimaryExpression(static_cast<StringType *>($1)); }
     | '(' expression ')' { $$ = new PrimaryExpression(static_cast<ExpressionStatement *>($2)); }
@@ -42,18 +50,18 @@ primary_expression
     ;
 
 constant
-    : I_CONSTANT        /* includes character_constant */ { $$ = new StringType("I_CONSTANT", yytext); }
-    | F_CONSTANT { $$ = new StringType("F_CONSTANT", yytext); }
-    | ENUMERATION_CONSTANT  /* after it has been defined as such */ { $$ = new StringType("ENUMERATION_CONSTANT", yytext); }
+    : I_CONSTANT        /* includes character_constant */ { $$ = new StringType("I_CONSTANT", $<text>1); }
+    | F_CONSTANT { $$ = new StringType("F_CONSTANT", $<text>1); }
+    | ENUMERATION_CONSTANT  /* after it has been defined as such */ { $$ = new StringType("ENUMERATION_CONSTANT", $<text>1); }
     ;
 
-enumeration_constant        /* before it has been defined as such */
-    : IDENTIFIER { $$ = new StringType("IDENTIFIER", yytext); }
+enumeration_constant
+    : IDENTIFIER { $$ = new StringType("IDENTIFIER", $<text>1); }
     ;
 
 string
-    : STRING_LITERAL { $$ = new StringType("STRING_LITERAL", yytext); }
-    | FUNC_NAME { $$ = new StringType("FUNC_NAME", yytext); }
+    : STRING_LITERAL { $$ = new StringType("STRING_LITERAL", $<text>1); }
+    | FUNC_NAME { $$ = new StringType("FUNC_NAME", $<text>1); }
     ;
 
 generic_selection
@@ -74,7 +82,7 @@ postfix_expression
     : primary_expression { $$ = new PostfixExpression(static_cast<PrimaryExpression *>($1)); }
     | postfix_expression '[' expression ']'
     | postfix_expression '(' ')'
-    | postfix_expression '(' argument_expression_list ')'
+    | postfix_expression '(' argument_expression_list ')' { $$ = new PostfixExpression(static_cast<PostfixExpression *>($1), static_cast<ArgumentExpressionList *>($3)); }
     | postfix_expression '.' IDENTIFIER
     | postfix_expression PTR_OP IDENTIFIER
     | postfix_expression INC_OP
@@ -84,8 +92,8 @@ postfix_expression
     ;
 
 argument_expression_list
-    : assignment_expression
-    | argument_expression_list ',' assignment_expression
+    : assignment_expression { $$ = new ArgumentExpressionList(); ((ArgumentExpressionList *)$$)->add(static_cast<AssignmentExpression *>($1)); }
+    | argument_expression_list ',' assignment_expression { ((ArgumentExpressionList *)$1)->add(static_cast<AssignmentExpression *>($3)); $$ = $1; }
     ;
 
 unary_expression
@@ -257,7 +265,7 @@ type_specifier
     | atomic_type_specifier { $$ = $1; }
     | struct_or_union_specifier { $$ = $1; }
     | enum_specifier { $$ = $1; }
-    | TYPEDEF_NAME      /* after it has been defined as such */ { $$ = new StringType("TYPEDEF_NAME", yytext); }
+    | TYPEDEF_NAME      /* after it has been defined as such */ { $$ = new StringType("TYPEDEF_NAME", $<text>1); }
     ;
 
 struct_or_union_specifier
@@ -313,7 +321,7 @@ enumerator_list
     | enumerator_list ',' enumerator
     ;
 
-enumerator  /* identifiers must be flagged as ENUMERATION_CONSTANT */
+enumerator
     : enumeration_constant '=' constant_expression
     | enumeration_constant
     ;
@@ -345,7 +353,7 @@ declarator
     ;
 
 direct_declarator
-    : IDENTIFIER { $$ = new DirectDeclarator(new StringType("IDENTIFIER", yytext)); }
+    : IDENTIFIER { $$ = new DirectDeclarator(new StringType("IDENTIFIER", $<text>1)); }
     | '(' declarator ')' { $$ = new DirectDeclarator(static_cast<Declarator *>($2)); }
     | direct_declarator '[' ']'
     | direct_declarator '[' '*' ']'
@@ -392,8 +400,8 @@ parameter_declaration
     ;
 
 identifier_list
-    : IDENTIFIER { $$ = new IdentifierList(); ((IdentifierList *)$$)->add(new StringType("IDENTIFIER", yytext)); }
-    | identifier_list ',' IDENTIFIER { ((IdentifierList *)$1)->add(new StringType("IDENTIFIER", yytext)); $$ = $1; }
+    : IDENTIFIER { $$ = new IdentifierList(); ((IdentifierList *)$$)->add(new StringType("IDENTIFIER", $<text>1)); }
+    | identifier_list ',' IDENTIFIER { ((IdentifierList *)$1)->add(new StringType("IDENTIFIER", $<text>3)); $$ = $1; }
     ;
 
 type_name
@@ -498,26 +506,26 @@ expression_statement
     ;
 
 selection_statement
-    : IF '(' expression ')' statement ELSE statement
-    | IF '(' expression ')' statement
-    | SWITCH '(' expression ')' statement
+    : IF '(' expression ')' statement ELSE statement { $$ = new SelectionStatement(static_cast<ExpressionStatement *>($3), static_cast<Statement *>($5), static_cast<Statement *>($7)); }
+    | IF '(' expression ')' statement { $$ = new SelectionStatement(static_cast<ExpressionStatement *>($3), static_cast<Statement *>($5), nullptr); }
+    | SWITCH '(' expression ')' statement { $$ = new SelectionStatement(static_cast<ExpressionStatement *>($3), static_cast<Statement *>($5), nullptr); }
     ;
 
 iteration_statement
-    : WHILE '(' expression ')' statement
-    | DO statement WHILE '(' expression ')' ';'
-    | FOR '(' expression_statement expression_statement ')' statement
-    | FOR '(' expression_statement expression_statement expression ')' statement
-    | FOR '(' declaration expression_statement ')' statement
-    | FOR '(' declaration expression_statement expression ')' statement
+    : WHILE '(' expression ')' statement { $$ = new IterationStatement(static_cast<ExpressionStatement *>($3), static_cast<Statement *>($5)); }
+    | DO statement WHILE '(' expression ')' ';' { $$ = new IterationStatement(static_cast<Statement *>($2), static_cast<ExpressionStatement *>($5)); }
+    | FOR '(' expression_statement expression_statement ')' statement { $$ = new IterationStatement(static_cast<ExpressionStatement *>($3), static_cast<ExpressionStatement *>($4), nullptr, static_cast<Statement *>($6)); }
+    | FOR '(' expression_statement expression_statement expression ')' statement { $$ = new IterationStatement(static_cast<ExpressionStatement *>($3), static_cast<ExpressionStatement *>($4), static_cast<ExpressionStatement *>($5), static_cast<Statement *>($7)); }
+    | FOR '(' declaration expression_statement ')' statement { $$ = new IterationStatement(static_cast<Declaration *>($3), static_cast<ExpressionStatement *>($4), nullptr, static_cast<Statement *>($6)); }
+    | FOR '(' declaration expression_statement expression ')' statement { $$ = new IterationStatement(static_cast<Declaration *>($3), static_cast<ExpressionStatement *>($4), static_cast<ExpressionStatement *>($5), static_cast<Statement *>($7)); }
     ;
 
 jump_statement
-    : GOTO IDENTIFIER ';'
-    | CONTINUE ';'
-    | BREAK ';'
-    | RETURN ';'
-    | RETURN expression ';'
+    : GOTO IDENTIFIER ';' { $$ = new JumpStatement(new StringType("IDENTIFIER", $<text>1)); }
+    | CONTINUE ';' { $$ = new JumpStatement(new StringType("CONTINUE", $<text>1)); }
+    | BREAK ';' { $$ = new JumpStatement(new StringType("BREAK", $<text>1)); }
+    | RETURN ';' { $$ = new JumpStatement(new StringType("RETURN", $<text>1)); }
+    | RETURN expression ';' { $$ = new JumpStatement(new StringType("RETURN", $<text>1), static_cast<ExpressionStatement *>($2)); }
     ;
 
 translation_unit

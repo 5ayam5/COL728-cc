@@ -13,6 +13,70 @@ void CompoundStatement::print(int depth) {
         blockItem->print(depth + 1);
 }
 
+void SelectionStatement::print(int depth) {
+    for (int i = 0; i < depth; i++)
+        cout << TABBING;
+    cout << "SelectionStatement";
+    cout << '\n';
+    switch (type) {
+    case 1:
+        if (iteExpressionStatement != nullptr)
+            iteExpressionStatement->print(depth + 1);
+        if (ifStatement != nullptr)
+            ifStatement->print(depth + 1);
+        if (elseStatement != nullptr)
+            elseStatement->print(depth + 1);
+        break;
+    case 2:
+        if (switchExpressionStatement != nullptr)
+            switchExpressionStatement->print(depth + 1);
+        if (switchStatement != nullptr)
+            switchStatement->print(depth + 1);
+        break;
+    default:
+        break;
+    }
+}
+
+void IterationStatement::print(int depth) {
+    for (int i = 0; i < depth; i++)
+        cout << TABBING;
+    cout << "IterationStatement";
+    cout << '\n';
+    switch (type) {
+    case 1:
+        if (whileExpressionStatement != nullptr)
+            whileExpressionStatement->print(depth + 1);
+        if (whileStatement != nullptr)
+            whileStatement->print(depth + 1);
+        break;
+    case 2:
+        if (doExpressionStatement != nullptr)
+            doExpressionStatement->print(depth + 1);
+        if (doStatement != nullptr)
+            doStatement->print(depth + 1);
+        break;
+    case 3:
+    case 4:
+        if (type == 3) {
+            if (forDeclaration != nullptr)
+                forDeclaration->print(depth + 1);
+        } else {
+            if (forExpressionStatement != nullptr)
+                forExpressionStatement->print(depth + 1);
+        }
+        if (forConditional != nullptr)
+            forConditional->print(depth + 1);
+        if (forIncrement != nullptr)
+            forIncrement->print(depth + 1);
+        if (forStatement != nullptr)
+            forStatement->print(depth + 1);
+        break;
+    default:
+        break;
+    }
+}
+
 void ParameterDeclaration::print(int depth) {
     for (int i = 0; i < depth; i++)
         cout << TABBING;
@@ -102,6 +166,15 @@ void PrimaryExpression::print(int depth) {
     default:
         break;
     }
+}
+
+void ArgumentExpressionList::print(int depth) {
+    for (int i = 0; i < depth; i++)
+        cout << TABBING;
+    cout << "ArgumentExpressionList";
+    cout << '\n';
+    for (auto assignmentExpression : assignmentExpressions)
+        assignmentExpression->print(depth + 1);
 }
 
 void UnaryExpression::print(int depth) {

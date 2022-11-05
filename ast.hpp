@@ -18,7 +18,7 @@ public:
         cout << '\n';
     }
 };
-#define YYSTYPE Node*
+// #define YYSTYPE Node*
 
 class ExternalDeclaration : public Node {};
 
@@ -28,6 +28,8 @@ private:
 
 public:
     StringType(string id, string value = "") : id(id), value(value) {}
+
+    void setId(string id) { this->id = id; }
 
     virtual void print(int depth) {
         for (int i = 0; i < depth; i++)
@@ -386,15 +388,30 @@ public:
     virtual void print(int depth);
 };
 
+class ArgumentExpressionList : public Node {
+private:
+    vector<AssignmentExpression *> assignmentExpressions;
+
+public:
+    void add(AssignmentExpression *assignmentExpression) { assignmentExpressions.push_back(assignmentExpression); }
+
+    virtual void print(int depth);
+};
+
 class PostfixExpression : public Node {
 private:
     union {
         PrimaryExpression *primaryExpression;
+        struct {
+            PostfixExpression *postfixExpression;
+            ArgumentExpressionList *argumentExpressionList;
+        };
     };
     uint8_t type;
 
 public:
     PostfixExpression(PrimaryExpression *primaryExpression) : primaryExpression(primaryExpression), type(1) {}
+    PostfixExpression(PostfixExpression *postfixExpression, ArgumentExpressionList *argumentExpressionList) : postfixExpression(postfixExpression), argumentExpressionList(argumentExpressionList), type(2) {}
     PostfixExpression() : type(0) {}
 
     virtual void print(int depth) {
@@ -406,6 +423,12 @@ public:
         case 1:
             if (primaryExpression != nullptr)
                 primaryExpression->print(depth + 1);
+            break;
+        case 2:
+            if (postfixExpression != nullptr)
+                postfixExpression->print(depth + 1);
+            if (argumentExpressionList != nullptr)
+                argumentExpressionList->print(depth + 1);
             break;
         default:
             break;
@@ -661,6 +684,8 @@ public:
 
 class BlockItem;
 
+class Statement;
+
 class CompoundStatement : public Node {
 private:
     vector<BlockItem *> blockItems;
@@ -671,11 +696,87 @@ public:
     virtual void print(int depth);
 };
 
-class SelectionStatement : public Node {};
+class SelectionStatement : public Node {
+private:
+    union {
+        struct {
+            ExpressionStatement *iteExpressionStatement;
+            Statement *ifStatement;
+            Statement *elseStatement;
+        };
+        struct {
+            ExpressionStatement *switchExpressionStatement;
+            Statement *switchStatement;
+        };
+    };
+    uint8_t type;
 
-class IterationStatement : public Node {};
+public:
+    SelectionStatement(ExpressionStatement *iteExpressionStatement, Statement *ifStatement, Statement *elseStatement)
+    : iteExpressionStatement(iteExpressionStatement), ifStatement(ifStatement), elseStatement(elseStatement), type(1) {}
+    SelectionStatement(ExpressionStatement *switchExpressionStatement, Statement *switchStatement)
+    : switchExpressionStatement(switchExpressionStatement), switchStatement(switchStatement), type(2) {}
+    SelectionStatement() : type(0) {}
 
-class JumpStatement : public Node {};
+    virtual void print(int depth);
+};
+
+class IterationStatement : public Node {
+private:
+    union {
+        struct {
+            ExpressionStatement *whileExpressionStatement;
+            Statement *whileStatement;
+        };
+        struct {
+            ExpressionStatement *doExpressionStatement;
+            Statement *doStatement;
+        };
+        struct {
+            union {
+                Declaration *forDeclaration;
+                ExpressionStatement *forExpressionStatement;
+            };
+            ExpressionStatement *forConditional;
+            ExpressionStatement *forIncrement;
+            Statement *forStatement;
+        };
+    };
+    uint8_t type;
+
+public:
+    IterationStatement(ExpressionStatement *whileExpressionStatement, Statement *whileStatement)
+    : whileExpressionStatement(whileExpressionStatement), whileStatement(whileStatement), type(1) {}
+    IterationStatement(Statement *doStatement, ExpressionStatement *doExpressionStatement)
+    : doExpressionStatement(doExpressionStatement), doStatement(doStatement), type(2) {}
+    IterationStatement(Declaration *forDeclaration, ExpressionStatement *forConditional, ExpressionStatement *forIncrement, Statement *forStatement)
+    : forDeclaration(forDeclaration), forConditional(forConditional), forIncrement(forIncrement), forStatement(forStatement), type(3) {}
+    IterationStatement(ExpressionStatement *forExpressionStatement, ExpressionStatement *forConditional, ExpressionStatement *forIncrement, Statement *forStatement)
+    : forExpressionStatement(forExpressionStatement), forConditional(forConditional), forIncrement(forIncrement), forStatement(forStatement), type(4) {}
+    IterationStatement() : type(0) {}
+
+    virtual void print(int depth);
+};
+
+class JumpStatement : public Node {
+private:
+    StringType *jumpType;
+    ExpressionStatement *expressionStatement;
+
+public:
+    JumpStatement(StringType *jumpType, ExpressionStatement *expressionStatement = nullptr) : jumpType(jumpType), expressionStatement(expressionStatement) {}
+
+    virtual void print(int depth) {
+        for (int i = 0; i < depth; i++)
+            cout << TABBING;
+        cout << "JumpStatement";
+        cout << '\n';
+        if (jumpType != nullptr)
+            jumpType->print(depth + 1);
+        if (expressionStatement != nullptr)
+            expressionStatement->print(depth + 1);
+    }
+};
 
 class Statement : public Node {
 private:
