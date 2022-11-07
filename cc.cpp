@@ -26,5 +26,6 @@ main(int argc, char **argv)
   int ret = yyparse();
   printf("retv = %d\n", ret);
   dump_ast();
+  dump_ir();
   exit(0);
 }

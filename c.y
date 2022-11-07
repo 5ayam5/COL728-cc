@@ -42,9 +42,9 @@ void yyerror(const char *s);
 %%
 
 primary_expression
-    : IDENTIFIER { $$ = new PrimaryExpression(new StringType("IDENTIFIER", $<text>1)); }
-    | constant { $$ = new PrimaryExpression(static_cast<StringType *>($1)); }
-    | string { $$ = new PrimaryExpression(static_cast<StringType *>($1)); }
+    : IDENTIFIER { $$ = new PrimaryExpression(new StringType("IDENTIFIER", $<text>1), 1); }
+    | constant { $$ = new PrimaryExpression(static_cast<StringType *>($1), 2); }
+    | string { $$ = new PrimaryExpression(static_cast<StringType *>($1), 3); }
     | '(' expression ')' { $$ = new PrimaryExpression(static_cast<ExpressionStatement *>($2)); }
     | generic_selection { $$ = new PrimaryExpression(static_cast<GenericSelection *>($1)); }
     ;
@@ -98,21 +98,21 @@ argument_expression_list
 
 unary_expression
     : postfix_expression { $$ = new UnaryExpression(static_cast<PostfixExpression *>($1)); }
-    | INC_OP unary_expression { $$ = new UnaryExpression(new StringType("++"), static_cast<UnaryExpression *>($2)); }
-    | DEC_OP unary_expression { $$ = new UnaryExpression(new StringType("--"), static_cast<UnaryExpression *>($2)); }
+    | INC_OP unary_expression { $$ = new UnaryExpression(new StringType("++", "++"), static_cast<UnaryExpression *>($2)); }
+    | DEC_OP unary_expression { $$ = new UnaryExpression(new StringType("--", "--"), static_cast<UnaryExpression *>($2)); }
     | unary_operator cast_expression { $$ = new UnaryExpression(static_cast<StringType *>($1), static_cast<CastExpression *>($2)); }
-    | SIZEOF unary_expression { $$ = new UnaryExpression(new StringType("SIZEOF"), static_cast<UnaryExpression *>($2)); }
-    | SIZEOF '(' type_name ')' { $$ = new UnaryExpression(new StringType("SIZEOF"), static_cast<TypeName *>($3)); }
-    | ALIGNOF '(' type_name ')' { $$ = new UnaryExpression(new StringType("ALIGNOF"), static_cast<TypeName *>($3)); }
+    | SIZEOF unary_expression { $$ = new UnaryExpression(new StringType("SIZEOF", "SIZEOF"), static_cast<UnaryExpression *>($2)); }
+    | SIZEOF '(' type_name ')' { $$ = new UnaryExpression(new StringType("SIZEOF", "SIZEOF"), static_cast<TypeName *>($3)); }
+    | ALIGNOF '(' type_name ')' { $$ = new UnaryExpression(new StringType("ALIGNOF", "ALIGNOF"), static_cast<TypeName *>($3)); }
     ;
 
 unary_operator
-    : '&' { $$ = new StringType("&"); }
-    | '*' { $$ = new StringType("*"); }
-    | '+' { $$ = new StringType("+"); }
-    | '-' { $$ = new StringType("-"); }
-    | '~' { $$ = new StringType("~"); }
-    | '!' { $$ = new StringType("!"); }
+    : '&' { $$ = new StringType("&", "&"); }
+    | '*' { $$ = new StringType("*", "*"); }
+    | '+' { $$ = new StringType("+", "+"); }
+    | '-' { $$ = new StringType("-", "-"); }
+    | '~' { $$ = new StringType("~", "~"); }
+    | '!' { $$ = new StringType("!", "!"); }
     ;
 
 cast_expression
@@ -122,60 +122,60 @@ cast_expression
 
 multiplicative_expression
     : cast_expression { $$ = new BinaryExpression(static_cast<CastExpression *>($1)); }
-    | multiplicative_expression '*' cast_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("*"), static_cast<BinaryExpression *>($3)); }
-    | multiplicative_expression '/' cast_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("/"), static_cast<BinaryExpression *>($3)); }
-    | multiplicative_expression '%' cast_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("%"), static_cast<BinaryExpression *>($3)); }
+    | multiplicative_expression '*' cast_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("*", "*"), static_cast<BinaryExpression *>($3)); }
+    | multiplicative_expression '/' cast_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("/", "/"), static_cast<BinaryExpression *>($3)); }
+    | multiplicative_expression '%' cast_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("%", "%"), static_cast<BinaryExpression *>($3)); }
     ;
 
 additive_expression
     : multiplicative_expression { $$ = $1; }
-    | additive_expression '+' multiplicative_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("+"), static_cast<BinaryExpression *>($3)); }
-    | additive_expression '-' multiplicative_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("-"), static_cast<BinaryExpression *>($3)); }
+    | additive_expression '+' multiplicative_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("+", "+"), static_cast<BinaryExpression *>($3)); }
+    | additive_expression '-' multiplicative_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("-", "+"), static_cast<BinaryExpression *>($3)); }
     ;
 
 shift_expression
     : additive_expression { $$ = $1; }
-    | shift_expression LEFT_OP additive_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("<<"), static_cast<BinaryExpression *>($3)); }
-    | shift_expression RIGHT_OP additive_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType(">>"), static_cast<BinaryExpression *>($3)); }
+    | shift_expression LEFT_OP additive_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("<<", "<<"), static_cast<BinaryExpression *>($3)); }
+    | shift_expression RIGHT_OP additive_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType(">>", ">>"), static_cast<BinaryExpression *>($3)); }
     ;
 
 relational_expression
     : shift_expression { $$ = $1; }
-    | relational_expression '<' shift_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("<"), static_cast<BinaryExpression *>($3)); }
-    | relational_expression '>' shift_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType(">"), static_cast<BinaryExpression *>($3)); }
-    | relational_expression LE_OP shift_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("<="), static_cast<BinaryExpression *>($3)); }
-    | relational_expression GE_OP shift_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType(">="), static_cast<BinaryExpression *>($3)); }
+    | relational_expression '<' shift_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("<", "<"), static_cast<BinaryExpression *>($3)); }
+    | relational_expression '>' shift_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType(">", ">"), static_cast<BinaryExpression *>($3)); }
+    | relational_expression LE_OP shift_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("<=", "<="), static_cast<BinaryExpression *>($3)); }
+    | relational_expression GE_OP shift_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType(">=", ">="), static_cast<BinaryExpression *>($3)); }
     ;
 
 equality_expression
     : relational_expression { $$ = $1; }
-    | equality_expression EQ_OP relational_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("=="), static_cast<BinaryExpression *>($3)); }
-    | equality_expression NE_OP relational_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("!="), static_cast<BinaryExpression *>($3)); }
+    | equality_expression EQ_OP relational_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("==", "=="), static_cast<BinaryExpression *>($3)); }
+    | equality_expression NE_OP relational_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("!=", "!="), static_cast<BinaryExpression *>($3)); }
     ;
 
 and_expression
     : equality_expression { $$ = $1; }
-    | and_expression '&' equality_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("&"), static_cast<BinaryExpression *>($3)); }
+    | and_expression '&' equality_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("&", "&"), static_cast<BinaryExpression *>($3)); }
     ;
 
 exclusive_or_expression
     : and_expression { $$ = $1; }
-    | exclusive_or_expression '^' and_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("^"), static_cast<BinaryExpression *>($3)); }
+    | exclusive_or_expression '^' and_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("^", "^"), static_cast<BinaryExpression *>($3)); }
     ;
 
 inclusive_or_expression
     : exclusive_or_expression { $$ = $1; }
-    | inclusive_or_expression '|' exclusive_or_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("|"), static_cast<BinaryExpression *>($3)); }
+    | inclusive_or_expression '|' exclusive_or_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("|", "|"), static_cast<BinaryExpression *>($3)); }
     ;
 
 logical_and_expression
     : inclusive_or_expression { $$ = $1; }
-    | logical_and_expression AND_OP inclusive_or_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("&&"), static_cast<BinaryExpression *>($3)); }
+    | logical_and_expression AND_OP inclusive_or_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("&&", "&&"), static_cast<BinaryExpression *>($3)); }
     ;
 
 logical_or_expression
     : logical_and_expression { $$ = $1; }
-    | logical_or_expression OR_OP logical_and_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("||"), static_cast<BinaryExpression *>($3)); }
+    | logical_or_expression OR_OP logical_and_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("||", "||"), static_cast<BinaryExpression *>($3)); }
     ;
 
 conditional_expression
@@ -189,17 +189,17 @@ assignment_expression
     ;
 
 assignment_operator
-    : '=' { $$ = new StringType("ASSIGN"); }
-    | MUL_ASSIGN { $$ = new StringType("MUL_ASSIGN"); }
-    | DIV_ASSIGN { $$ = new StringType("DIV_ASSIGN"); }
-    | MOD_ASSIGN { $$ = new StringType("MOD_ASSIGN"); }
-    | ADD_ASSIGN { $$ = new StringType("ADD_ASSIGN"); }
-    | SUB_ASSIGN { $$ = new StringType("SUB_ASSIGN"); }
-    | LEFT_ASSIGN { $$ = new StringType("LEFT_ASSIGN"); }
-    | RIGHT_ASSIGN { $$ = new StringType("RIGHT_ASSIGN"); }
-    | AND_ASSIGN { $$ = new StringType("AND_ASSIGN"); }
-    | XOR_ASSIGN { $$ = new StringType("XOR_ASSIGN"); }
-    | OR_ASSIGN { $$ = new StringType("OR_ASSIGN"); }
+    : '=' { $$ = new StringType("ASSIGN", "ASSIGN"); }
+    | MUL_ASSIGN { $$ = new StringType("MUL_ASSIGN", "MUL_ASSIGN"); }
+    | DIV_ASSIGN { $$ = new StringType("DIV_ASSIGN", "DIV_ASSIGN"); }
+    | MOD_ASSIGN { $$ = new StringType("MOD_ASSIGN", "MOD_ASSIGN"); }
+    | ADD_ASSIGN { $$ = new StringType("ADD_ASSIGN", "ADD_ASSIGN"); }
+    | SUB_ASSIGN { $$ = new StringType("SUB_ASSIGN", "SUB_ASSIGN"); }
+    | LEFT_ASSIGN { $$ = new StringType("LEFT_ASSIGN", "LEFT_ASSIGN"); }
+    | RIGHT_ASSIGN { $$ = new StringType("RIGHT_ASSIGN", "RIGHT_ASSIGN"); }
+    | AND_ASSIGN { $$ = new StringType("AND_ASSIGN", "AND_ASSIGN"); }
+    | XOR_ASSIGN { $$ = new StringType("XOR_ASSIGN", "XOR_ASSIGN"); }
+    | OR_ASSIGN { $$ = new StringType("OR_ASSIGN", "OR_ASSIGN"); }
     ;
 
 expression
@@ -241,27 +241,27 @@ init_declarator
     ;
 
 storage_class_specifier
-    : TYPEDEF   /* identifiers must be flagged as TYPEDEF_NAME */ { $$ = new StringType("TYPEDEF"); }
-    | EXTERN { $$ = new StringType("EXTERN"); }
-    | STATIC { $$ = new StringType("STATIC"); }
-    | THREAD_LOCAL { $$ = new StringType("THREAD_LOCAL"); }
-    | AUTO { $$ = new StringType("AUTO"); }
-    | REGISTER { $$ = new StringType("REGISTER"); }
+    : TYPEDEF   /* identifiers must be flagged as TYPEDEF_NAME */ { $$ = new StringType("TYPEDEF", "TYPEDEF"); }
+    | EXTERN { $$ = new StringType("EXTERN", "EXTERN"); }
+    | STATIC { $$ = new StringType("STATIC", "STATIC"); }
+    | THREAD_LOCAL { $$ = new StringType("THREAD_LOCAL", "THREAD_LOCAL"); }
+    | AUTO { $$ = new StringType("AUTO", "AUTO"); }
+    | REGISTER { $$ = new StringType("REGISTER", "REGISTER"); }
     ;
 
 type_specifier
-    : VOID { $$ = new StringType("VOID"); }
-    | CHAR { $$ = new StringType("CHAR"); }
-    | SHORT { $$ = new StringType("SHORT"); }
-    | INT { $$ = new StringType("INT"); }
-    | LONG { $$ = new StringType("LONG"); }
-    | FLOAT { $$ = new StringType("FLOAT"); }
-    | DOUBLE { $$ = new StringType("DOUBLE"); }
-    | SIGNED { $$ = new StringType("SIGNED"); }
-    | UNSIGNED { $$ = new StringType("UNSIGNED"); }
-    | BOOL { $$ = new StringType("BOOL"); }
-    | COMPLEX { $$ = new StringType("COMPLEX"); }
-    | IMAGINARY     /* non-mandated extension */ { $$ = new StringType("IMAGINARY"); }
+    : VOID { $$ = new StringType("VOID", "VOID"); }
+    | CHAR { $$ = new StringType("CHAR", "CHAR"); }
+    | SHORT { $$ = new StringType("SHORT", "SHORT"); }
+    | INT { $$ = new StringType("INT", "INT"); }
+    | LONG { $$ = new StringType("LONG", "LONG"); }
+    | FLOAT { $$ = new StringType("FLOAT", "FLOAT"); }
+    | DOUBLE { $$ = new StringType("DOUBLE", "DOUBLE"); }
+    | SIGNED { $$ = new StringType("SIGNED", "SIGNED"); }
+    | UNSIGNED { $$ = new StringType("UNSIGNED", "UNSIGNED"); }
+    | BOOL { $$ = new StringType("BOOL", "BOOL"); }
+    | COMPLEX { $$ = new StringType("COMPLEX", "COMPLEX"); }
+    | IMAGINARY     /* non-mandated extension */ { $$ = new StringType("IMAGINARY", "IMAGINARY"); }
     | atomic_type_specifier { $$ = $1; }
     | struct_or_union_specifier { $$ = $1; }
     | enum_specifier { $$ = $1; }
@@ -331,15 +331,15 @@ atomic_type_specifier
     ;
 
 type_qualifier
-    : CONST { $$ = new StringType("CONST"); }
-    | RESTRICT { $$ = new StringType("CONST"); }
-    | VOLATILE { $$ = new StringType("CONST"); }
-    | ATOMIC { $$ = new StringType("CONST"); }
+    : CONST { $$ = new StringType("CONST", "CONST"); }
+    | RESTRICT { $$ = new StringType("CONST", "CONST"); }
+    | VOLATILE { $$ = new StringType("CONST", "CONST"); }
+    | ATOMIC { $$ = new StringType("CONST", "CONST"); }
     ;
 
 function_specifier
-    : INLINE { $$ = new StringType("INLINE"); }
-    | NORETURN { $$ = new StringType("NORETURN"); }
+    : INLINE { $$ = new StringType("INLINE", "INLINE"); }
+    | NORETURN { $$ = new StringType("NORETURN", "NORETURN"); }
     ;
 
 alignment_specifier
@@ -383,7 +383,7 @@ type_qualifier_list
 
 
 parameter_type_list
-    : parameter_list ',' ELLIPSIS { DeclarationSpecifiers *ellipsis = new DeclarationSpecifiers(); ellipsis->add(new StringType("ELLIPSIS"));
+    : parameter_list ',' ELLIPSIS { DeclarationSpecifiers *ellipsis = new DeclarationSpecifiers(); ellipsis->add(new StringType("ELLIPSIS", "ELLIPSIS"));
                                     ((ParameterTypeList *)$1)->add(new ParameterDeclaration(ellipsis)); $$ = $1; }
     | parameter_list { $$ = $1; }
     ;

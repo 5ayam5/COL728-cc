@@ -1,0 +1,351 @@
+retv = 0
+FunctionDefinition
+  DeclarationSpecifiers
+    INT INT
+  Declarator
+    DirectDeclarator
+      DirectDeclarator
+        IDENTIFIER factorial
+      DirectDeclaratorUtil
+        ParameterTypeList
+          ParameterDeclaration
+            DeclarationSpecifiers
+              INT INT
+            Declarator
+              DirectDeclarator
+                IDENTIFIER n
+  CompoundStatement
+    BlockItem
+      Statement
+        SelectionStatement
+          ExpressionStatement
+            AssignmentExpression
+              ConditionalExpression
+                BinaryExpression
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            IDENTIFIER n
+                  <= <=
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            I_CONSTANT 0
+          Statement
+            JumpStatement
+              RETURN return
+              ExpressionStatement
+                AssignmentExpression
+                  ConditionalExpression
+                    BinaryExpression
+                      CastExpression
+                        UnaryExpression
+                          PostfixExpression
+                            PrimaryExpression
+                              I_CONSTANT 1
+          Statement
+            JumpStatement
+              RETURN return
+              ExpressionStatement
+                AssignmentExpression
+                  ConditionalExpression
+                    BinaryExpression
+                      BinaryExpression
+                        CastExpression
+                          UnaryExpression
+                            PostfixExpression
+                              PrimaryExpression
+                                IDENTIFIER n
+                      * *
+                      CastExpression
+                        UnaryExpression
+                          PostfixExpression
+                            PostfixExpression
+                              PrimaryExpression
+                                IDENTIFIER factorial
+                            ArgumentExpressionList
+                              AssignmentExpression
+                                ConditionalExpression
+                                  BinaryExpression
+                                    BinaryExpression
+                                      CastExpression
+                                        UnaryExpression
+                                          PostfixExpression
+                                            PrimaryExpression
+                                              IDENTIFIER n
+                                    - +
+                                    BinaryExpression
+                                      CastExpression
+                                        UnaryExpression
+                                          PostfixExpression
+                                            PrimaryExpression
+                                              I_CONSTANT 1
+FunctionDefinition
+  DeclarationSpecifiers
+    INT INT
+  Declarator
+    DirectDeclarator
+      DirectDeclarator
+        IDENTIFIER fibonacci
+      DirectDeclaratorUtil
+        ParameterTypeList
+          ParameterDeclaration
+            DeclarationSpecifiers
+              INT INT
+            Declarator
+              DirectDeclarator
+                IDENTIFIER a
+          ParameterDeclaration
+            DeclarationSpecifiers
+              INT INT
+            Declarator
+              DirectDeclarator
+                IDENTIFIER b
+          ParameterDeclaration
+            DeclarationSpecifiers
+              INT INT
+            Declarator
+              DirectDeclarator
+                IDENTIFIER n
+  CompoundStatement
+    BlockItem
+      Statement
+        SelectionStatement
+          ExpressionStatement
+            AssignmentExpression
+              ConditionalExpression
+                BinaryExpression
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            IDENTIFIER n
+                  <= <=
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            I_CONSTANT 0
+          Statement
+            JumpStatement
+              RETURN return
+              ExpressionStatement
+                AssignmentExpression
+                  ConditionalExpression
+                    BinaryExpression
+                      CastExpression
+                        UnaryExpression
+                          PostfixExpression
+                            PrimaryExpression
+                              IDENTIFIER a
+    BlockItem
+      Statement
+        IterationStatement
+          ExpressionStatement
+            AssignmentExpression
+              ConditionalExpression
+                BinaryExpression
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            IDENTIFIER n
+                  > >
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            I_CONSTANT 0
+          Statement
+            CompoundStatement
+              BlockItem
+                Declaration
+                  DeclarationSpecifiers
+                    INT INT
+                  InitDeclaratorList
+                    InitDeclarator
+                      Declarator
+                        DirectDeclarator
+                          IDENTIFIER t
+              BlockItem
+                Statement
+                  ExpressionStatement
+                    AssignmentExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            IDENTIFIER t
+                      ASSIGN ASSIGN
+                      AssignmentExpression
+                        ConditionalExpression
+                          BinaryExpression
+                            CastExpression
+                              UnaryExpression
+                                PostfixExpression
+                                  PrimaryExpression
+                                    IDENTIFIER b
+              BlockItem
+                Statement
+                  ExpressionStatement
+                    AssignmentExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            IDENTIFIER b
+                      ASSIGN ASSIGN
+                      AssignmentExpression
+                        ConditionalExpression
+                          BinaryExpression
+                            BinaryExpression
+                              CastExpression
+                                UnaryExpression
+                                  PostfixExpression
+                                    PrimaryExpression
+                                      IDENTIFIER a
+                            + +
+                            BinaryExpression
+                              CastExpression
+                                UnaryExpression
+                                  PostfixExpression
+                                    PrimaryExpression
+                                      IDENTIFIER b
+              BlockItem
+                Statement
+                  ExpressionStatement
+                    AssignmentExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            IDENTIFIER a
+                      ASSIGN ASSIGN
+                      AssignmentExpression
+                        ConditionalExpression
+                          BinaryExpression
+                            CastExpression
+                              UnaryExpression
+                                PostfixExpression
+                                  PrimaryExpression
+                                    IDENTIFIER t
+              BlockItem
+                Statement
+                  ExpressionStatement
+                    AssignmentExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            IDENTIFIER n
+                      ASSIGN ASSIGN
+                      AssignmentExpression
+                        ConditionalExpression
+                          BinaryExpression
+                            BinaryExpression
+                              CastExpression
+                                UnaryExpression
+                                  PostfixExpression
+                                    PrimaryExpression
+                                      IDENTIFIER n
+                            - +
+                            BinaryExpression
+                              CastExpression
+                                UnaryExpression
+                                  PostfixExpression
+                                    PrimaryExpression
+                                      I_CONSTANT 1
+    BlockItem
+      Statement
+        JumpStatement
+          RETURN return
+          ExpressionStatement
+            AssignmentExpression
+              ConditionalExpression
+                BinaryExpression
+                  CastExpression
+                    UnaryExpression
+                      PostfixExpression
+                        PrimaryExpression
+                          IDENTIFIER b
+FunctionDefinition
+  DeclarationSpecifiers
+    INT INT
+  Declarator
+    DirectDeclarator
+      DirectDeclarator
+        IDENTIFIER main
+  CompoundStatement
+    BlockItem
+      Statement
+        JumpStatement
+          RETURN return
+          ExpressionStatement
+            AssignmentExpression
+              ConditionalExpression
+                BinaryExpression
+                  CastExpression
+                    UnaryExpression
+                      PostfixExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            IDENTIFIER fibonacci
+                        ArgumentExpressionList
+                          AssignmentExpression
+                            ConditionalExpression
+                              BinaryExpression
+                                CastExpression
+                                  UnaryExpression
+                                    PostfixExpression
+                                      PostfixExpression
+                                        PrimaryExpression
+                                          IDENTIFIER factorial
+                                      ArgumentExpressionList
+                                        AssignmentExpression
+                                          ConditionalExpression
+                                            BinaryExpression
+                                              CastExpression
+                                                UnaryExpression
+                                                  PostfixExpression
+                                                    PrimaryExpression
+                                                      I_CONSTANT 1
+                          AssignmentExpression
+                            ConditionalExpression
+                              BinaryExpression
+                                CastExpression
+                                  UnaryExpression
+                                    PostfixExpression
+                                      PostfixExpression
+                                        PrimaryExpression
+                                          IDENTIFIER factorial
+                                      ArgumentExpressionList
+                                        AssignmentExpression
+                                          ConditionalExpression
+                                            BinaryExpression
+                                              CastExpression
+                                                UnaryExpression
+                                                  PostfixExpression
+                                                    PrimaryExpression
+                                                      I_CONSTANT 2
+                          AssignmentExpression
+                            ConditionalExpression
+                              BinaryExpression
+                                CastExpression
+                                  UnaryExpression
+                                    PostfixExpression
+                                      PostfixExpression
+                                        PrimaryExpression
+                                          IDENTIFIER factorial
+                                      ArgumentExpressionList
+                                        AssignmentExpression
+                                          ConditionalExpression
+                                            BinaryExpression
+                                              CastExpression
+                                                UnaryExpression
+                                                  PostfixExpression
+                                                    PrimaryExpression
+                                                      I_CONSTANT 5

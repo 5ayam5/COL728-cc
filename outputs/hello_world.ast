@@ -1,0 +1,81 @@
+retv = 0
+Declaration
+  DeclarationSpecifiers
+    INT INT
+  InitDeclaratorList
+    InitDeclarator
+      Declarator
+        DirectDeclarator
+          DirectDeclarator
+            IDENTIFIER printf
+          DirectDeclaratorUtil
+            ParameterTypeList
+              ParameterDeclaration
+                DeclarationSpecifiers
+                  CONST CONST
+                  CHAR CHAR
+                Declarator
+                  Pointer
+                  DirectDeclarator
+                    IDENTIFIER format
+              ParameterDeclaration
+                DeclarationSpecifiers
+                  ELLIPSIS ELLIPSIS
+FunctionDefinition
+  DeclarationSpecifiers
+    INT INT
+  Declarator
+    DirectDeclarator
+      DirectDeclarator
+        IDENTIFIER main
+      DirectDeclaratorUtil
+        ParameterTypeList
+          ParameterDeclaration
+            DeclarationSpecifiers
+              INT INT
+            Declarator
+              DirectDeclarator
+                IDENTIFIER argc
+          ParameterDeclaration
+            DeclarationSpecifiers
+              CHAR CHAR
+            Declarator
+              Pointer
+                Pointer
+              DirectDeclarator
+                IDENTIFIER argv
+  CompoundStatement
+    BlockItem
+      Statement
+        ExpressionStatement
+          AssignmentExpression
+            ConditionalExpression
+              BinaryExpression
+                CastExpression
+                  UnaryExpression
+                    PostfixExpression
+                      PostfixExpression
+                        PrimaryExpression
+                          IDENTIFIER printf
+                      ArgumentExpressionList
+                        AssignmentExpression
+                          ConditionalExpression
+                            BinaryExpression
+                              CastExpression
+                                UnaryExpression
+                                  PostfixExpression
+                                    PrimaryExpression
+                                      STRING_LITERAL "hello, world\n"
+    BlockItem
+      Statement
+        JumpStatement
+          RETURN return
+          ExpressionStatement
+            AssignmentExpression
+              ConditionalExpression
+                BinaryExpression
+                  CastExpression
+                    UnaryExpression
+                      PostfixExpression
+                        PrimaryExpression
+                          I_CONSTANT 0

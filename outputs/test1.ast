@@ -1,0 +1,90 @@
+retv = 0
+FunctionDefinition
+  DeclarationSpecifiers
+    VOID VOID
+  Declarator
+    DirectDeclarator
+      DirectDeclarator
+        IDENTIFIER empty
+  CompoundStatement
+FunctionDefinition
+  DeclarationSpecifiers
+    VOID VOID
+  Declarator
+    DirectDeclarator
+      DirectDeclarator
+        IDENTIFIER simple_arith
+  CompoundStatement
+    BlockItem
+      Statement
+        ExpressionStatement
+          AssignmentExpression
+            ConditionalExpression
+              BinaryExpression
+                BinaryExpression
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                  << <<
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            I_CONSTANT 3
+                | |
+                BinaryExpression
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                  & &
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                            I_CONSTANT 1024
+FunctionDefinition
+  DeclarationSpecifiers
+    VOID VOID
+  Declarator
+    DirectDeclarator
+      DirectDeclarator
+        IDENTIFIER simple_arith_with_arg
+      DirectDeclaratorUtil
+        ParameterTypeList
+          ParameterDeclaration
+            DeclarationSpecifiers
+              INT INT
+            Declarator
+              DirectDeclarator
+                IDENTIFIER d
+  CompoundStatement
+    BlockItem
+      Statement
+        ExpressionStatement
+          AssignmentExpression
+            ConditionalExpression
+              BinaryExpression
+                BinaryExpression
+                  CastExpression
+                    UnaryExpression
+                      PostfixExpression
+                        PrimaryExpression
+                || ||
+                BinaryExpression
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression
+                  && &&
+                  BinaryExpression
+                    CastExpression
+                      UnaryExpression
+                        PostfixExpression
+                          PrimaryExpression

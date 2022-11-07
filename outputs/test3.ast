@@ -1,0 +1,26 @@
+retv = 0
+FunctionDefinition
+  DeclarationSpecifiers
+    INT INT
+  Declarator
+    Pointer
+      TypeQualifierList
+        CONST CONST
+      Pointer
+    DirectDeclarator
+      DirectDeclarator
+        IDENTIFIER test
+  CompoundStatement
+    BlockItem
+      Statement
+        JumpStatement
+          RETURN return
+          ExpressionStatement
+            AssignmentExpression
+              ConditionalExpression
+                BinaryExpression
+                  CastExpression
+                    UnaryExpression
+                      PostfixExpression
+                        PrimaryExpression
+                          I_CONSTANT 0

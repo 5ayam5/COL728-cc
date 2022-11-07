@@ -4,10 +4,29 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <map>
+
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
 
 #define TABBING "  "
 
 using namespace std;
+using namespace llvm;
+
+extern std::unique_ptr<LLVMContext> TheContext;
+extern std::unique_ptr<Module> TheModule;
+extern std::unique_ptr<IRBuilder<>> Builder;
+extern std::map<std::string, Value *> NamedValues;
 
 class Node {
 public:
@@ -17,8 +36,11 @@ public:
         cout << "Node (not implemented)";
         cout << '\n';
     }
+
+    virtual Value *codegen() {
+        return nullptr;
+    }
 };
-// #define YYSTYPE Node*
 
 class ExternalDeclaration : public Node {};
 
@@ -29,13 +51,15 @@ private:
 public:
     StringType(string id, string value = "") : id(id), value(value) {}
 
-    void setId(string id) { this->id = id; }
-
     virtual void print(int depth) {
         for (int i = 0; i < depth; i++)
             cout << TABBING;
         cout << id << ' ' << value;
         cout << '\n';
+    }
+
+    string getValue() {
+        return value;
     }
 };
 
@@ -54,6 +78,34 @@ public:
         for (auto specifier : specifiers)
             specifier->print(depth + 1);
     }
+
+    Type *getType() {
+        for (auto specifier : specifiers) {
+            if (specifier->getValue() == "FLOAT")
+                return Type::getFloatTy(*TheContext);
+            else if (specifier->getValue() == "DOUBLE")
+                return Type::getDoubleTy(*TheContext);
+            else if (specifier->getValue() == "CHAR")
+                return Type::getInt8Ty(*TheContext);
+            else if (specifier->getValue() == "VOID")
+                return Type::getVoidTy(*TheContext);
+            else if (specifier->getValue() == "BOOL")
+                return Type::getInt1Ty(*TheContext);
+            else if (specifier->getValue() == "SHORT")
+                return Type::getInt16Ty(*TheContext);
+            else if (specifier->getValue() == "INT")
+                return Type::getInt32Ty(*TheContext);
+            else if (specifier->getValue() == "LONG")
+                return Type::getInt64Ty(*TheContext);
+            else if (specifier->getValue() == "UNSIGNED")
+                return Type::getInt32Ty(*TheContext);
+            else if (specifier->getValue() == "SIGNED")
+                return Type::getInt32Ty(*TheContext);
+        }
+        return nullptr;
+    }
+
+    vector<StringType *> getSpecifiers() { return specifiers; }
 };
 
 class TypeQualifierList : public Node {
@@ -94,6 +146,13 @@ public:
         if (childPointer != nullptr)
             childPointer->print(depth + 1);
     }
+
+    Type *getType(Type *type) {
+        if (childPointer == nullptr)
+            return type;
+        else
+            return childPointer->getType(PointerType::get(type, 0));
+    }
 };
 
 class Declarator;
@@ -116,6 +175,18 @@ public:
     ParameterDeclaration(DeclarationSpecifiers *declarationSpecifiers) : declarationSpecifiers(declarationSpecifiers), type(0) {}
 
     virtual void print(int depth);
+
+    string getIdentifier();
+
+    Type *getType();
+
+    bool isVariadic() {
+        for (auto specifier : declarationSpecifiers->getSpecifiers()) {
+            if (specifier->getValue() == "ELLIPSIS")
+                return true;
+        }
+        return false;
+    }
 };
 
 class ParameterTypeList : public Node {
@@ -128,10 +199,14 @@ public:
     virtual void print(int depth) {
         for (int i = 0; i < depth; i++)
             cout << TABBING;
-        cout << "IdentifierList";
+        cout << "ParameterTypeList";
         cout << '\n';
         for (auto parameterDeclaration : parameterDeclarations)
             parameterDeclaration->print(depth + 1);
+    }
+
+    vector<ParameterDeclaration *> getParameterDeclarations() {
+        return parameterDeclarations;
     }
 };
 
@@ -149,6 +224,10 @@ public:
         cout << '\n';
         for (auto identifier : identifiers)
             identifier->print(depth + 1);
+    }
+
+    vector<StringType *> getIdentifiers() {
+        return identifiers;
     }
 };
 
@@ -183,6 +262,14 @@ public:
             break;
         }
     }
+
+    ParameterTypeList *getParameterTypeList() {
+        return parameterTypeList;
+    }
+
+    IdentifierList *getIdentifierList() {
+        return identifierList;
+    }
 };
 
 class DirectDeclarator : public Node {
@@ -204,6 +291,31 @@ public:
     DirectDeclarator() : type(0) {}
 
     virtual void print(int depth);
+
+    string getName() {
+        if (type == 1)
+            return stringType->getValue();
+        if (type == 3)
+            return directDeclarator->getName();
+        else
+            return "";
+    }
+
+    IdentifierList *getIdentifierList() {
+        if (type == 3)
+            return ddUtil->getIdentifierList();
+        else
+            return nullptr;
+    }
+
+    ParameterTypeList *getParameterTypeList() {
+        if (type == 3 && ddUtil)
+            return ddUtil->getParameterTypeList();
+        else
+            return nullptr;
+    }
+
+    uint8_t getASTType() { return type; }
 };
 
 class Declarator : public Node {
@@ -224,6 +336,14 @@ public:
             pointer->print(depth + 1);
         if (directDeclarator != nullptr)
             directDeclarator->print(depth + 1);
+    }
+
+    DirectDeclarator *getDirectDeclarator() { return directDeclarator; }
+
+    Type *getType(Type *type) {
+        if (pointer == nullptr)
+            return type;
+        return pointer->getType(PointerType::get(type, 0));
     }
 };
 
@@ -247,6 +367,8 @@ public:
         if (initializer != nullptr)
             initializer->print(depth + 1);
     }
+
+    Declarator *getDeclarator() { return declarator; }
 };
 
 class InitDeclaratorList : public Node {
@@ -263,6 +385,10 @@ public:
         cout << '\n';
         for (auto initDeclarator : initDeclarators)
             initDeclarator->print(depth + 1);
+    }
+
+    vector<InitDeclarator *> getInitDeclarators() {
+        return initDeclarators;
     }
 };
 
@@ -303,6 +429,39 @@ public:
         default:
             break;
         }
+    }
+
+    virtual Value *codegen() {
+        // cout << "Codegen for Declaration" << '\n';
+        Type *type = declarationSpecifiers->getType();
+        Value *last;
+        for (auto initDeclarator : initDeclaratorList->getInitDeclarators()) {
+            Declarator *declarator = initDeclarator->getDeclarator();
+            string name = declarator->getDirectDeclarator()->getName();
+            if (name == "")
+                continue;
+            bool isVariable = declarator->getDirectDeclarator()->getASTType() == 1;
+            if (isVariable)
+                Builder->CreateAlloca(type, nullptr, name);
+            else {
+                vector<Type *> argTypes;
+                bool isVariadic = false;
+                for (auto parameterDeclaration : declarator->getDirectDeclarator()->getParameterTypeList()->getParameterDeclarations()) {
+                    Type *argType = parameterDeclaration->getType();
+                    if (argType != nullptr)
+                        argTypes.push_back(argType);
+                    isVariadic |= parameterDeclaration->isVariadic();
+                }
+                Function *function = Function::Create(FunctionType::get(type, argTypes, isVariadic), Function::ExternalLinkage, name, TheModule.get());
+
+                unsigned i = 0;
+                for (auto &arg : function->args())
+                    arg.setName(declarator->getDirectDeclarator()->getParameterTypeList()->getParameterDeclarations()[i++]->getIdentifier());
+                
+                last = function;
+            }
+        }
+        return last;
     }
 };
 
@@ -380,12 +539,23 @@ private:
     uint8_t type;
 
 public:
-    PrimaryExpression(StringType *stringType) : stringType(stringType), type(1) {}
-    PrimaryExpression(ExpressionStatement *expressionStatement) : expressionStatement(expressionStatement), type(2) {}
-    PrimaryExpression(GenericSelection *genericSelection) : genericSelection(genericSelection), type(3) {}
+    PrimaryExpression(StringType *stringType, uint8_t type) : stringType(stringType), type(type) {}
+    PrimaryExpression(ExpressionStatement *expressionStatement) : expressionStatement(expressionStatement), type(4) {}
+    PrimaryExpression(GenericSelection *genericSelection) : genericSelection(genericSelection), type(5) {}
     PrimaryExpression() : type(0) {}
 
     virtual void print(int depth);
+
+    virtual Value *codegen();
+
+    string getName() {
+        switch (type) {
+        case 1:
+            return stringType->getValue();
+        default:
+            return "";
+        }
+    }
 };
 
 class ArgumentExpressionList : public Node {
@@ -396,6 +566,10 @@ public:
     void add(AssignmentExpression *assignmentExpression) { assignmentExpressions.push_back(assignmentExpression); }
 
     virtual void print(int depth);
+
+    size_t getSize() { return assignmentExpressions.size(); }
+
+    vector<AssignmentExpression *> getAssignmentExpressions() { return assignmentExpressions; }
 };
 
 class PostfixExpression : public Node {
@@ -434,6 +608,14 @@ public:
             break;
         }
     }
+
+    virtual Value *codegen();
+
+    string getName() {
+        if (type == 1)
+            return primaryExpression->getName();
+        return postfixExpression->getName();
+    }
 };
 
 class CastExpression;
@@ -466,6 +648,34 @@ public:
     UnaryExpression() : type(0) {}
 
     virtual void print(int depth);
+
+    virtual Value *codegen() {
+        // cout << "Codegen for UnaryExpression" << '\n';
+        if (type == 1) {
+            return postfixExpression->codegen();
+        } else if (type == 2) {
+            Value *unVal = unaryExpression->codegen();
+            if (unaryOp->getValue() == "&")
+                return nullptr;
+            else if (unaryOp->getValue() == "*")
+                return Builder->CreateLoad(unVal->getType(), unVal);
+            else if (unaryOp->getValue() == "+")
+                return unVal;
+            else if (unaryOp->getValue() == "-")
+                return Builder->CreateNeg(unVal);
+            else if (unaryOp->getValue() == "~")
+                return Builder->CreateNot(unVal);
+            else if (unaryOp->getValue() == "!")
+                return Builder->CreateNot(unVal);
+            else if (unaryOp->getValue() == "++")
+                return Builder->CreateAdd(unVal, ConstantInt::get(*TheContext, APInt(32, 1)));
+            else if (unaryOp->getValue() == "--")
+                return Builder->CreateSub(unVal, ConstantInt::get(*TheContext, APInt(32, 1)));
+            else
+                return nullptr;
+        } else
+            return nullptr;
+    }
 };
 
 class SpecifierQualifierList : public Node {
@@ -565,6 +775,13 @@ public:
             break;
         }
     }
+
+    virtual Value *codegen() {
+        if (type == 1)
+            return unaryExpression->codegen();
+        else
+            return nullptr;
+    }
 };
 
 class BinaryExpression : public Node {
@@ -606,6 +823,56 @@ public:
             break;
         }
     }
+
+    virtual Value *codegen() {
+        if (type == 1) {
+            Value *op1 = operand1->codegen();
+            Value *op2 = operand2->codegen();
+            if (op1 == nullptr || op2 == nullptr)
+                return nullptr;
+            if (operator_->getValue() == "+")
+                return Builder->CreateAdd(op1, op2);
+            else if (operator_->getValue() == "-")
+                return Builder->CreateSub(op1, op2);
+            else if (operator_->getValue() == "*")
+                return Builder->CreateMul(op1, op2);
+            else if (operator_->getValue() == "/")
+                return Builder->CreateSDiv(op1, op2);
+            else if (operator_->getValue() == "%")
+                return Builder->CreateSRem(op1, op2);
+            else if (operator_->getValue() == "<<")
+                return Builder->CreateShl(op1, op2);
+            else if (operator_->getValue() == ">>")
+                return Builder->CreateAShr(op1, op2);
+            else if (operator_->getValue() == "<")
+                return Builder->CreateICmpSLT(op1, op2);
+            else if (operator_->getValue() == ">")
+                return Builder->CreateICmpSGT(op1, op2);
+            else if (operator_->getValue() == "<=")
+                return Builder->CreateICmpSLE(op1, op2);
+            else if (operator_->getValue() == ">=")
+                return Builder->CreateICmpSGE(op1, op2);
+            else if (operator_->getValue() == "==")
+                return Builder->CreateICmpEQ(op1, op2);
+            else if (operator_->getValue() == "!=")
+                return Builder->CreateICmpNE(op1, op2);
+            else if (operator_->getValue() == "&")
+                return Builder->CreateAnd(op1, op2);
+            else if (operator_->getValue() == "^")
+                return Builder->CreateXor(op1, op2);
+            else if (operator_->getValue() == "|")
+                return Builder->CreateOr(op1, op2);
+            else if (operator_->getValue() == "&&")
+                return Builder->CreateAnd(op1, op2);
+            else if (operator_->getValue() == "||")
+                return Builder->CreateOr(op1, op2);
+            else
+                return nullptr;
+        } else if (type == 2)
+            return castExpression->codegen();
+        else
+            return nullptr;
+    }
 };
 
 class ExpressionStatement;
@@ -621,6 +888,8 @@ public:
     : binaryExpression(binaryExpression), expressionStatement(expressionStatement), conditionalExpression(conditionalExpression) {}
 
     virtual void print(int depth);
+
+    virtual Value *codegen();
 };
 
 class AssignmentExpression : public Node {
@@ -663,6 +932,43 @@ public:
             break;
         }
     }
+
+    virtual Value *codegen() {
+        // cout << "Codegen for AssignmentExpression" << '\n';
+        if (type == 1) {
+            Value *lval = unaryExpression->codegen();
+            Value *rval = assignmentExpression->codegen();
+            if (lval == nullptr || rval == nullptr)
+                return nullptr;
+            else if (assignmentOperator->getValue() == "ASSIGN")
+                return Builder->CreateStore(rval, lval);
+            else if (assignmentOperator->getValue() == "MUL_ASSIGN")
+                return Builder->CreateStore(Builder->CreateMul(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "DIV_ASSIGN")
+                return Builder->CreateStore(Builder->CreateSDiv(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "MOD_ASSIGN")
+                return Builder->CreateStore(Builder->CreateSRem(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "ADD_ASSIGN")
+                return Builder->CreateStore(Builder->CreateAdd(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "SUB_ASSIGN")
+                return Builder->CreateStore(Builder->CreateSub(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "LEFT_ASSIGN")
+                return Builder->CreateStore(Builder->CreateShl(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "RIGHT_ASSIGN")
+                return Builder->CreateStore(Builder->CreateAShr(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "AND_ASSIGN")
+                return Builder->CreateStore(Builder->CreateAnd(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "XOR_ASSIGN")
+                return Builder->CreateStore(Builder->CreateXor(lval, rval), lval);
+            else if (assignmentOperator->getValue() == "OR_ASSIGN")
+                return Builder->CreateStore(Builder->CreateOr(lval, rval), lval);
+            else
+                return nullptr;
+        } else if (type == 2)
+            return conditionalExpression->codegen();
+        else
+            return nullptr;
+    }
 };
 
 class ExpressionStatement : public Node {
@@ -680,6 +986,14 @@ public:
         for (auto expression : expressions)
             expression->print(depth + 1);
     }
+
+    virtual Value *codegen() {
+        // cout << "Codegen for ExpressionStatement" << '\n';
+        Value *last = nullptr;
+        for (auto expression : expressions)
+            last = expression->codegen();
+        return last;
+    }
 };
 
 class BlockItem;
@@ -694,6 +1008,8 @@ public:
     void add(BlockItem *blockItem);
 
     virtual void print(int depth);
+
+    virtual Value *codegen();
 };
 
 class SelectionStatement : public Node {
@@ -719,6 +1035,8 @@ public:
     SelectionStatement() : type(0) {}
 
     virtual void print(int depth);
+
+    virtual Value *codegen();
 };
 
 class IterationStatement : public Node {
@@ -756,6 +1074,8 @@ public:
     IterationStatement() : type(0) {}
 
     virtual void print(int depth);
+
+    virtual Value *codegen();
 };
 
 class JumpStatement : public Node {
@@ -775,6 +1095,20 @@ public:
             jumpType->print(depth + 1);
         if (expressionStatement != nullptr)
             expressionStatement->print(depth + 1);
+    }
+
+    virtual Value *codegen() {
+        // cout << "Codegen for JumpStatement" << '\n';
+        if (jumpType->getValue() == "return") {
+            if (expressionStatement != nullptr) {
+                Value *value = expressionStatement->codegen();
+                if (value == nullptr)
+                    return nullptr;
+                return Builder->CreateRet(value);
+            }
+            return Builder->CreateRetVoid();
+        } else
+            return nullptr;
     }
 };
 
@@ -833,6 +1167,25 @@ public:
             break;
         }
     }
+
+    virtual Value *codegen() {
+        switch (type) {
+        case 1:
+            return labeled->codegen();
+        case 2:
+            return compound->codegen();
+        case 3:
+            return expression->codegen();
+        case 4:
+            return selection->codegen();
+        case 5:
+            return iteration->codegen();
+        case 6:
+            return jump->codegen();
+        default:
+            return nullptr;
+        }
+    }
 };
 
 class BlockItem : public Node {
@@ -866,6 +1219,18 @@ public:
             break;
         }
     }
+
+    virtual Value *codegen() {
+        // cout << "Codegen for BlockItem" << '\n';
+        switch (type) {
+        case 1:
+            return declaration->codegen();
+        case 2:
+            return statement->codegen();
+        default:
+            return nullptr;
+        }
+    }
 };
 
 class FunctionDefinition : public ExternalDeclaration {
@@ -897,10 +1262,52 @@ public:
         if (compoundStatement != nullptr)
             compoundStatement->print(depth + 1);
     }
+
+    virtual Value *codegen() {
+        // cout << "Codegen for FunctionDefinition" << '\n';
+        Type *returnType = declarationSpecifiers->getType();
+        DirectDeclarator *directDeclarator = declarator->getDirectDeclarator();
+        string funcName = directDeclarator->getName();
+        ParameterTypeList *parameterTypeList = directDeclarator->getParameterTypeList();
+
+        Function *function = TheModule->getFunction(funcName);
+
+        if (function == nullptr) {
+            vector<Type *> argTypes;
+            bool isVariadic = false;
+            if (parameterTypeList != nullptr) {
+                for (auto &parameterDeclaration : parameterTypeList->getParameterDeclarations()) {
+                    argTypes.push_back(parameterDeclaration->getType());
+                    isVariadic |= parameterDeclaration->isVariadic();
+                }
+            }
+
+            FunctionType *functionType = FunctionType::get(returnType, argTypes, isVariadic);
+            function = Function::Create(functionType, Function::ExternalLinkage, funcName, TheModule.get());
+        }
+
+        BasicBlock *basicBlock = BasicBlock::Create(*TheContext, "entry", function);
+        Builder->SetInsertPoint(basicBlock);
+
+        NamedValues.clear();
+        unsigned i = 0;
+        for (auto &arg : function->args()) {
+            arg.setName(parameterTypeList->getParameterDeclarations()[i]->getIdentifier());
+            NamedValues[arg.getName().str()] = &arg;
+            i++;
+        }
+
+        Value *retValue = compoundStatement->codegen();
+        Builder->CreateRet(retValue);
+        verifyFunction(*function);
+        return function;
+    }
 };
 
 extern vector<ExternalDeclaration *> external_declarations;
 
 void dump_ast();
+
+void dump_ir();
 
 #endif
