@@ -130,7 +130,7 @@ multiplicative_expression
 additive_expression
     : multiplicative_expression { $$ = $1; }
     | additive_expression '+' multiplicative_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("+", "+"), static_cast<BinaryExpression *>($3)); }
-    | additive_expression '-' multiplicative_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("-", "+"), static_cast<BinaryExpression *>($3)); }
+    | additive_expression '-' multiplicative_expression { $$ = new BinaryExpression(static_cast<BinaryExpression *>($1), new StringType("-", "-"), static_cast<BinaryExpression *>($3)); }
     ;
 
 shift_expression
